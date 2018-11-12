@@ -1,0 +1,86 @@
+\section{Mono-variable control}\label{sec:part2}
+
+\subsection{Mono-variable controllers for pitch angle and travel rate}
+In this section we connect the helicopter to an elevation controller in simulink that was handed out as part of the assignment. We then design our own controllers for pitch angle, $\tilde{p}$, and travel rate, $\dot{\tilde{\lambda}}$. The joystick's x-axis is then used to set the reference value for the travel rate.
+
+\subsubsection{PD-controller for pitch angle}
+The PD-controller, proportional- and derivative-controller, to control the pitch angle, $p$, is given by \cref{eq:PD_pitch}:
+
+
+\begin{gather}\label{eq:PD_pitch}
+    \tilde{V_d} = K_{pp}(\tilde{p_c}-\tilde{p}) - K_{pd}\dot{\tilde{p}}
+\end{gather}
+
+where $K_{pp}, K_{pd} > 0$ and $\tilde{p_c}$ is the desired reference for the pitch angle, $p$. \Cref{eq:PD_pitch} is then substituted into \cref{eq:lin_mot_pitch} to get \cref{eq:pitch_closed_loop}:
+
+\begin{gather}\label{eq:pitch_closed_loop}
+    \ddot{p} = K_{1}((K_{pp}(\tilde{p_c}-\tilde{p}) - K_{pd}\dot{\tilde{p}})
+\end{gather}
+
+We then take the Laplace transform of \cref{eq:pitch_closed_loop} and find the transfer function from $\tilde{p}$ to $\tilde{p_{c}}$ and examine it to find reasonable values for $K_pp$ and $K_pd$:
+
+\begin{gather}\label{eq:TF_pitch}
+    \frac{\tilde{p}(s)}{\tilde{p_{c}}(s)} = \frac{K_{1}K_{pp}}{s^2 + K_{1}K_{pd}s + K_{1}K_{pp}}
+\end{gather}
+
+By using the principles developed for pole placement of transfer functions from Control Theory\cite{regtek} we choose $K_{pp}$ and $K_{pd}$ so that we get a gain of one, $K_{1}K_{pp} = 1$, and poles in the right half-plane at $\lambda_{1}, \lambda_{2} = -1$. This gives us a critical dampening ratio, $\zeta$ of 1, and the following theoretical values:
+
+
+\begin{align}\label{eq:K_ppK_pd}
+    &K_{pp} = \frac{1}{K_1}   
+    &K_{pd} = \frac{2}{K_1}
+\end{align}
+
+
+\subsubsection{P-controller for travel rate}
+We wish to control the travel rate of our helicopter, $\dot{\tilde{\lambda}}$, using a simple proportional controller given by \cref{eq:P_travelRate}:
+
+\begin{gather}\label{eq:P_travelRate}
+    \tilde{p_c} = K_{rp}(\dot{\tilde{\lambda_c}} - \dot{\tilde{\lambda}})
+\end{gather}
+
+\Cref{eq:P_travelRate} is then inserted into \cref{eq:lin_mot_travel} to give \cref{eq:travel_closedLoop}:
+
+\begin{gather}\label{eq:travel_closedLoop}
+    \ddot{\tilde{\lambda}} = K_{3}K_{rp}(\dot{\tilde{\lambda_c}}  - \dot{\tilde{\lambda}})
+\end{gather}
+
+We, once again, take the Laplace transform of \cref{eq:travel_closedLoop} and rearrange to find the transfer function from $\dot{\tilde{\lambda}}$ to $\dot{\tilde{\lambda_c}}$. The resulting transfer function is given in \cref{eq:TF_travel}:
+
+
+\begin{equation}\label{eq:TF_travel}
+    \begin{aligned}
+        \frac{\dot{\tilde{\lambda}}}{\dot{\tilde{\lambda_c}}} &= \frac{K_{3}K_{rp}}{s + K_{3}K_{rp}} \\
+         &= \frac{\rho}{s + \rho},&\rho = K_{3}K_{rp}
+    \end{aligned}
+\end{equation}
+
+Once more we use principles developed in Control Theory\cite{regtek} and place the pole in the right half-plane, at $\lambda = -1$, giving us the following value for $K_{rp}$:
+
+
+\begin{gather}\label{eq:K_rp}
+    K_{rp} = \frac{1}{K_3}
+\end{gather}
+
+\subsection{Implementation of mono-variable controllers in Simulink}
+First, the pitch controller, \cref{eq:PD_pitch} was implemented in simulink, and the x-axis of the joystick used to set the reference for the pitch angle, $p_c$. The simulink diagram can be found in the appendix, \cref{fig:pitch_controller}. The joystick output was also scaled by a suitable gain to get a reasonable range for our reference.
+
+After that, we  connect the travel rate controller, \cref{eq:P_travelRate}, that gives us a desired value for the pitch angle reference, $\tilde{p_c}$, as the input to our pitch controller . The joystick now sets the reference for the travel rate, $\dot{\tilde{\lambda_c}}$. The simulink diagrams for this controller is found in the appendix at \cref{fig:monoTravelPitch} and \cref{fig:monoTravel}.
+
+\subsection{Tuning of controllers}
+When trying out our controller based on the theoretical model we noticed a sluggish response, implying that our controlled, physical system was overdamped. This could be due to modeling errors and reducing the controller gains could improve this.  The new final values for our controller gains we settled on is shown in \cref{eq:monoContrFinalValue}.
+
+\begin{align}\label{eq:monoContrFinalValue}
+    &K_{pp} = \frac{1}{K_1}   = 1.7534
+    &K_{pd} = \frac{0.9}{K_1} = 1.5781 \quad
+    &K_{rp} = \frac{0.5}{K_3} = -0.8173
+\end{align}
+
+Reducing the values of $K_{pd}$ and $K_{rp}$ from the theoretical optimal values, like we do, pushes the eigenvalues of the system closer to the origo in the left half-plane.
+
+\subsection{Evaluation of controller design}
+The poles of our two transfer functions representing our controllers are chosen according to the idealized, linearized dynamics of our system. This means that even though our pole-placement is theoretically an optimal choice, the controllers will not behave as predicted. This is due to deviations from our theoretical model. Errors include modeling error such as inaccurate measurements of masses and lengths of the helicopter.
+The controllers also operate under the assumption that the dynamics of the system are linear, which they are not. This means that our controllers only function as expected in the linear region around the point of linearization.
+
+Since the dynamics of the physical system are different than what our controllers are based on, one can expect better controller response with further manual tuning. However, we deemed our controllers fast and accurate enough around the linear region to move on to further assignments.
+

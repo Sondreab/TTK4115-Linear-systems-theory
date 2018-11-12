@@ -1,0 +1,109 @@
+\section{Observability}
+The way the disturbances are included in the state space model, as high-frequency states in case of wave disturbances or superpositioned on the original state in case of rudder bias, makes it possible to determine the observability of our system using conventional methods. Our code for these observability tests are found in the appendix in \cref{fig:p5p4}.
+
+\subsection{Problem a}
+The system as presented in \cref{eq:ship_model} can be represented in the state-space form of equation \cref{eq:state_space}. The system matrices for the full system with all disturbances are given by \cref{eq:ss_all}. Note that removing disturbances corresponds to changing the state vector, $\mathbf{x}$, and the system matrices. 
+
+
+
+\begin{equation}\label{eq:ss_all}
+\begin{aligned}
+\mathbf{A} &=
+    \begin{bmatrix}
+        0 & 1 & 0 & 0 & 0 \\
+        -\omega_0^2 & -2\lambda\omega_0 & 0 & 0 & 0\\
+        0 & 0 & 0 & 1 & 0 \\
+        0 & 0 & 0 & -\frac{1}{T} & -\frac{K}{T} \\
+        0 & 0 & 0 & 0 & 0 
+    \end{bmatrix}
+,\quad \mathbf{B} &=
+    \begin{bmatrix}
+        0 \\ 0 \\ 0 \\ \frac{K}{T} \\ 0
+    \end{bmatrix}
+,\quad \mathbf{E} &=
+    \begin{bmatrix}
+        0 & 0 \\
+        K_w & 0 \\
+        0 & 0 \\
+        0 & 0 \\
+        0 & 1 
+    \end{bmatrix},
+\\\\
+\quad \mathbf{C} &=
+    \begin{bmatrix}
+        0 & 1 & 1 & 0 & 0
+    \end{bmatrix}
+\end{aligned}
+\end{equation}
+
+
+Below we will present the state space model for each scenario, and then consider the observability of each separate case. The observability will be determined by checking if the observability matrix has full rank\cite{chen}. Since the observability matrix is only dependent on the system matrices $\mathbf{A}$ and $\mathbf{C}$ the rest of the system matrices have been omitted from each scenario's observability test. The MATLAB-command to do this is given by \texttt{obsv(A,C)}.
+
+
+\subsection{Problem b}
+With no disturbances at all the only states in our system are $\psi$ and $r$ and the system matrices $\mathbf{A}$ and $\mathbf{C}$ are as presented in \cref{eq:obsv_ss_none}. The system is observable, as shown in \cref{eq:obsv_none}. 
+
+
+\begin{equation}\label{eq:obsv_ss_none}
+\begin{aligned}
+\mathbf{x} &= \begin{bmatrix} \psi \\ r  \end{bmatrix},
+\quad \mathbf{A} &= \begin{bmatrix} 0 & 1 \\ 0 & -\frac{1}{T}  \end{bmatrix},
+\quad \mathbf{C} &= \begin{bmatrix} 1 & 0 \end{bmatrix}
+\end{aligned}
+\end{equation}
+
+\begin{equation}\label{eq:obsv_none}
+    rank(\mathbb{O}_{no disturbance}) = 2 \Rightarrow Observable
+\end{equation}
+
+\subsection{Problem c}
+Introducing a current disturbance to the system is equivalent to augmenting the disturbance-free state-space with the rudder bias, $b$. The new system matrices and state vector are found in \cref{eq:obsv_ss_current}. This system is also observable as shown in \cref{eq:obsv_current}.
+
+\begin{equation}\label{eq:obsv_ss_current}
+\begin{aligned}
+\mathbf{x} &= \begin{bmatrix} \psi \\ r \\ b \end{bmatrix},
+\quad \mathbf{A} &= \begin{bmatrix} 0 & 1 & 0 \\ 0 & -\frac{1}{T} & -\frac{K}{T} \\ 0 & 0 & 0  \end{bmatrix},
+\quad \mathbf{C} &= \begin{bmatrix} 1 & 0 & 0 \end{bmatrix}
+\end{aligned}
+\end{equation}
+
+\begin{equation}\label{eq:obsv_current}
+    rank(\mathbb{O}_{current}) = 3 \Rightarrow Observable
+\end{equation}
+
+\subsection{Problem d}
+Introducing a wave disturbance to the disturbance-free system, \cref{eq:obsv_ss_none}, can be modeled as augmenting the state space with $\psi_w$ and $\xi_w$. The two augmented states corresponds to the high-frequency component of the heading, caused by the wave disturbance. The new state-space is shown in \cref{eq:obsv_ss_wave} and by \cref{eq:obsv_current} it too is observable.
+
+\begin{equation}\label{eq:obsv_ss_wave}
+\begin{aligned}
+\mathbf{x} &= \begin{bmatrix}\xi_w \\ \psi_w \\ \psi \\ r \end{bmatrix},
+\quad \mathbf{A} &= \begin{bmatrix} 0 & 1 & 0 & 0 \\ -\omega_0^2 & -2\lambda\omega_0 & 0 & 0 \\ 0 & 0 & 0 & 1 \\ 0 & 0 & 0 & -\frac{1}{T}   \end{bmatrix},
+\quad \mathbf{C} &= \begin{bmatrix} 0 & 1 & 1 & 0 \end{bmatrix}
+\end{aligned}
+\end{equation}
+
+\begin{equation}\label{eq:obsv_wave}
+    rank(\mathbb{O}_{wave}) = 4 \Rightarrow Observable
+\end{equation}
+
+\subsection{Problem e}
+Incorporating both wave and current disturbance into our state-space gives the state vector and system matrices shown in \cref{eq:obsv_ss_all}. By \cref{eq:obsv_all} the system, with all disturbances included, is observable.
+
+\begin{equation}\label{eq:obsv_ss_all}
+\begin{aligned}
+\mathbf{x} &= \begin{bmatrix}\xi_w \\ \psi_w \\ \psi \\ r \\ b \end{bmatrix},
+\quad \mathbf{A} &= \begin{bmatrix} 0 & 1 & 0 & 0 & 0 \\ -\omega_0^2 & -2\lambda\omega_0 & 0 & 0 & 0\\ 0 & 0 & 0 & 1 & 0 \\ 0 & 0 & 0 & -\frac{1}{T} & -\frac{K}{T} \\ 0 & 0 & 0 & 0 & 0   \end{bmatrix},
+\quad \mathbf{C} &= \begin{bmatrix} 0 & 1 & 1 & 0 & 0 \end{bmatrix}
+\end{aligned}
+\end{equation}
+
+\begin{equation}\label{eq:obsv_all}
+    rank(\mathbb{O}_{wave and current}) = 5 \Rightarrow Observable
+\end{equation}
+
+\subsection{Final note on observability and impact of stochastic signals}
+The observant reader may note that the nature of our stochastic, random, signals hasn't entered the discussion before now.
+
+When we examined the observability of our system, stochastic disturbances included, we assumed that we could just use the notion of observability for deterministic systems developed in \cite{chen}. The reason this holds up in a stochastic environment depends on the way we define observability in stochastic systems. The criteria for observability in a deterministic system is that knowing all prior inputs, $\mathbf{u}$, and measurements, $\mathbf{y}$ will let you uniquely determine the initial state, $\mathbf{x}_0$. This gives rise to the observability test that we use. If the observability matrix has full rank, it follows that its nullity is 0. Note that the nullity of the observability matrix is only dependent upon the system matrices $\mathbf{A}$ and $\mathbf{C}$.
+
+The way we expand this to a stochastic system, such as the one in \cref{eq:state_space}, is to propose that the probability density function of the initial state is shrinking towards a singular point as time approaches infinity. This criteria can be tested the same way as for the deterministic system, by checking the nullity and hence the rank of the observability matrix, leading us to the conclusion that all systems above, with or without disturbances are observable.

@@ -1,0 +1,268 @@
+\section{Multi-variable control}\label{sec:part3}
+
+\subsection{problem}
+This section constructs a state-space model for the dynamics of the helicopter. Then considers the controllability of the system before we develop a linear quadratic controller for the system using principles from optimal control\cite{Chen2014}.
+
+\subsubsection{State-space formulation of helicopter}
+The system of equations for pitch and elevation in \cref{eq:lin_trans_motion} can be written in the form of \cref{eq:state_space}, where $\mathbf{A}$ and $\mathbf{B}$ are matrices, and the state vector $\mathbf{x}$ and $\mathbf{u}$ are given by \cref{eq:state_input}:
+
+\begin{equation}\label{eq:state_space}
+        \mathbf{\dot{x} = Ax + Bu},
+        \quad
+        \mathbf{y = Cx + Du}
+\end{equation}
+
+\begin{equation}\label{eq:state_input}
+    \begin{aligned}
+        \mathbf{x} &= \begin{bmatrix} \tilde{p} \\ \dot{\tilde{p}} \\ \dot{\tilde{e}} \end{bmatrix}
+        \quad \textrm{and} \quad
+        \mathbf{u} &= \begin{bmatrix} \tilde{V}_s \\ \tilde{V}_d \end{bmatrix}
+    \end{aligned}
+\end{equation}
+
+$\mathbf{A}$, $\mathbf{B}$, $\mathbf{C}$ and $\mathbf{D}$ are then given by \cref{eq:sysMatrices}:
+
+\begin{equation}\label{eq:sysMatrices}
+    \begin{aligned}
+        \mathbf{A} &=
+        \begin{bmatrix}
+            0 & 1 & 0 \\
+            0 & 0 & 0 \\
+            0 & 0 & 0 
+        \end{bmatrix}
+        \: \textrm{,} \:
+        \mathbf{B} &=
+        \begin{bmatrix}
+            0 & 0 \\
+            0 & K_1 \\
+            K_2 & 0
+        \end{bmatrix}
+        \: \textrm{,} \:
+        \mathbf{C} &=
+        \begin{bmatrix}
+            1 & 0 & 0 \\
+            0 & 0 & 1
+        \end{bmatrix}
+        \: \textrm{,} \:
+        \mathbf{D} &= 0
+    \end{aligned}
+\end{equation}
+
+We investigate the controllability of our system by checking the controllability matrix of our system\cite{Chen2014} and examining if it has full row-rank:
+
+\begin{equation}\label{eq:ctrl_sys}
+    \begin{aligned}
+    \mathbb{C} &= 
+    [\mathbf{B}\quad \mathbf{AB}\quad \mathbf{A^2B}] = 
+    \begin{bmatrix}
+        0 & 0   & 0 & K_1 & 0 & 0 \\
+        0 & K_1 & 0 & 0   & 0 & 0 \\
+        K_2 & 0 & 0 & 0   & 0 & 0
+    \end{bmatrix}
+    \quad\Rightarrow \quad
+    rank[\mathbb{C}] &= 3
+    \end{aligned}
+\end{equation}
+
+\Cref{eq:ctrl_sys} shows that our system is in fact controllable and we can continue our quest for optimal control of the system.
+
+\subsubsection{Optimal control of helicopter}
+We aim to track a reference, $\mathbf{r}$, for the pitch angle, $\tilde{p}$, and elevation rate, $\dot{\tilde{e}}$ using a controller of the form given in \cref{eq:input_LQR}. The controller consists of two parts, first a reference feed-forward ($\mathbf{Pr}$), then a state feedback ($\mathbf{-Kx}$), this is called a linear quadratic regulator, LQR\cite{Chen2014}. $\mathbf{K}$ is found by optimizing the cost function detailed in \cref{eq:cost_LQR}.
+
+\begin{equation}\label{eq:input_LQR}
+    \mathbf{u\: = \: Pr\: -\: Kx }
+\end{equation}
+
+\begin{equation}\label{eq:cost_LQR}
+    J= \int_{0}^{\infty} (\mathbf{x^T}(t)\mathbf{Qx}(t) + \mathbf{u^T}(t)\mathbf{Ru}(t))dt
+\end{equation}
+
+The weighting matrices $\mathbf{Q}$ and $\mathbf{R}$ are diagonal matrices that determine the relative input- and output energy of the system. A further explanation can be found in \cite{Chen2014}. To extract $\mathbf{K}$ from \cref{eq:cost_LQR}, we use the MATLAB command \texttt{K=lqr(A,B,Q,R)}.
+
+The matrix $\mathbf{P}$ is chosen so that \cref{eq:P_finalValue} holds for fixed values of $\dot{\tilde{p}}_c$ and $\dot{\tilde{e}}_c$, and it can be shown that $\mathbf{P}$ can be found by solving the expression in \cref{eq:P_expression}\cite{Chen2014}.
+
+\begin{equation}\label{eq:P_finalValue}
+    \begin{aligned}
+        \lim_{t\to\infty}\tilde{p}(t) &= \tilde{p}_c
+        \quad \textrm{and} \quad
+        \lim_{t\to\infty}\dot{\tilde{e}}(t) &= \dot{\tilde{e}}_c
+    \end{aligned}
+\end{equation}
+    
+\begin{equation}\label{eq:P_expression}
+    \mathbf{P\;=\;[C(BK-A)^{-1}B}]^{-1}
+\end{equation}
+
+The closed loop of our system, \cref{eq:sysMatrices}, can be expressed as in \cref{eq:sys_CL}:
+
+\begin{equation}\label{eq:sys_CL}
+    \mathbf{\dot{x}} = \mathbf{(A-BK)x + BPr} 
+\end{equation}
+
+\subsubsection{Adding integral effect to system}
+The system is then modified to include an integral effect for the elevation rate, $\dot{\tilde{e}}$, and pitch angle, $\tilde{p}$. This results in two additional states, $\gamma$ and $\zeta$, that can be expressed as \cref{eq:integral_states}. The new state- and input-vector are now given by \cref{eq:states_withIntegral}
+
+\begin{equation}\label{eq:integral_states}
+    \begin{aligned}
+        \dot{\gamma} &= \tilde{p} - \tilde{p}_c \\
+        \dot{\zeta} &= \dot{\tilde{e}} - \dot{\tilde{e}}_c
+    \end{aligned}
+\end{equation}
+
+\begin{equation}\label{eq:states_withIntegral}
+    \begin{aligned}
+        \mathbf{x}_a &= 
+        \begin{bmatrix}
+            \tilde{p} \\ \dot{\tilde{p}} \\ \dot{\tilde{e}} \\ \gamma \\ \zeta
+        \end{bmatrix}
+        \quad \textrm{and} \quad
+        \mathbf{u} &=
+        \begin{bmatrix}
+            \tilde{V}_s \\ \tilde{V}_d
+        \end{bmatrix}
+    \end{aligned}
+\end{equation}
+
+The new, augmented system have more states than our original system and its state-space equation has changed. The new states are denoted $\mathbf{x_a}$ and the system is described by $\mathbf{\bar{A}}, \mathbf{\bar{B}}, \mathbf{\bar{C}}$. \Cref{eq:aug_sys} represents the new system.
+
+\begin{subequations}\label{eq:aug_sys}
+    \begin{equation}
+        \mathbf{\dot{x}}_a = 
+        \begin{bmatrix}
+            \dot{\tilde{p}} \\ \ddot{\tilde{p}} \\ \ddot{\tilde{e}} \\ \dot{\gamma} \\ \dot{\zeta}
+        \end{bmatrix}
+        =
+        \begin{bmatrix}
+            \mathbf{A} & \mathbf{0} \\
+            \mathbf{C} & \mathbf{0}
+        \end{bmatrix}
+        \mathbf{x_a} + 
+        \begin{bmatrix} \mathbf{B} \\ \mathbf{0} \end{bmatrix}
+        \mathbf{u} -
+        \begin{bmatrix} \mathbf{0} \\ \mathbb{I} \end{bmatrix}\mathbf{r}
+        = \mathbf{\bar{A}x_a + \bar{B}u} -
+        \begin{bmatrix} \mathbf{0} \\ \mathbb{I} \end{bmatrix}
+        \mathbf{r}
+    \end{equation}
+    
+    \begin{equation}
+        \mathbf{y} = 
+        \begin{bmatrix}
+            1 & 0 & 0 & 0 & 0 \\
+            0 & 0 & 1 & 0 & 0
+        \end{bmatrix}
+        \mathbf{x_a} = \mathbf{\bar{C}x_a}
+    \end{equation}
+\end{subequations}
+
+
+
+To this augmented system in \cref{eq:aug_sys} we wish once more to apply a controller of the form of \cref{eq:input_aug}. The closed loop of our augmented system is given by \cref{eq:aug_sys_CL}. 
+
+Notice that $\mathbf{\bar{P}}$ in \cref{eq:aug_sys_CL} consists of the same $\mathbf{P}$ as in \cref{eq:sys_CL} adjoined with the identity matrix. This is because the reference feed-forward of our controller, \cref{eq:input_aug}, no longer serves the purpose of removing the error when time approaches infinity, as it was originally designed for in \cref{eq:P_expression}. In fact, trying to calculate a new $\mathbf{\bar{P}}$ for the augmented system using \cref{eq:P_expression} will lead to the null-matrix as the purpose of the integral effect is to remove stationary errors. The $\mathbf{P}$-matrix from the unaugmented system is included in our controller to provide faster and more accurate tracking.
+
+\begin{equation}\label{eq:input_aug}
+    \mathbf{u} = -\mathbf{\bar{K}x_a} + \mathbf{\bar{P}r}
+\end{equation}
+
+\begin{equation}\label{eq:aug_sys_CL}
+    \begin{aligned}
+        \mathbf{\dot{x_a}} = \mathbf{(\bar{A}-\bar{B}\bar{K})x + \bar{B}\bar{P}r}
+        \quad
+        \mathbf{\bar{P}} = 
+        \begin{bmatrix}
+            \mathbf{P} \\ -\mathbb{I}
+        \end{bmatrix}
+    \end{aligned}
+\end{equation}
+
+\subsection{MATLAB implementaion of LQR and augmented system}
+As previously explained, the matrix $\mathbf{K}$ and $\mathbf{\bar{K}}$ are found using the MATLAB-command \texttt{K=lqr(A,B,Q,R)}. For this to work our systems, \cref{eq:sysMatrices} and \cref{eq:aug_sys}, needs to be implemented in code.
+The code needed to implement this can be found in \cref{fig:P3p2} and \cref{fig:P3p3}. The simulink diagrams found in \cref{fig:LQRSystem} - \ref{fig:LQRIntegral}.
+
+
+\subsection{Evaluation of LQR controllers}
+\subsubsection{Tuned values for LQR without integral effect}
+After a couple hours of tuning these were the values we settled on for the weighting matrices, $\mathbf{Q}$ and $\mathbf{R}$, stated in \cref{eq:QR_withoutIntegral}. Each entry on the main diagonal of $\mathbf{Q}$ corresponds to the relative weight of output energy of each state, while each entry of the main diagonal of $\mathbf{R}$ corresponds to the weight of input energy for each input, $\tilde{V_s}$ and $\tilde{V_d}$. Notice that elevation rate has a much higher weight than pitch and pitch rate, and pitch rate has the lowest weight of all. This weighting schemes represents the importance we put on each state, with the highest weight being the one we wish to have the most accurate response. The same argument can be made for $\mathbf{R}$ where $\tilde{V_d}$ is the most important input.
+\begin{equation}\label{eq:QR_withoutIntegral}
+    \begin{aligned}
+        \mathbf{Q} &=
+        \begin{bmatrix}
+            50 & 0 & 0 \\
+            0 & 10 & 0 \\
+            0 & 0 & 200 
+        \end{bmatrix}
+        \: \textrm{,} \:
+        \mathbf{R} &=
+        \begin{bmatrix}
+            5 & 0 \\
+            0 & 10 
+        \end{bmatrix}
+    \end{aligned}
+\end{equation}
+
+Using the MATLAB command detailed earlier gives us the following $\mathbf{K}$ and $\mathbf{P}$ that are used in our controller:
+
+\begin{equation}\label{eq:KP_WithoutIntegral}
+    \begin{aligned}
+        \mathbf{K} &=
+        \begin{bmatrix}
+            0 & 0 & 6.3246 \\
+            2.2361 & 2.9735 & 0 
+        \end{bmatrix}
+        \: \textrm{,} \:
+        \mathbf{P} &=
+        \begin{bmatrix}
+            0 & 6.3246 \\
+            2.2361 & 0 
+        \end{bmatrix}
+    \end{aligned}
+\end{equation}
+
+\subsubsection{Tuned values for LQR with integral effect}
+The LQR with integral effect follows the same tuning scheme as the LQR without integral effect. Here the weight of the pitch is increased slightly to give it a better response. Also two more states are included in $\mathbf{Q}$, $\gamma$ and $\zeta$, corresponding to the integral of pitch and elevation respectively. Final values for the augmented weighting matrices is given by \cref{eq:QR_WithIntegral}:
+\begin{equation}\label{eq:QR_WithIntegral}
+    \begin{aligned}
+        \mathbf{\bar{Q}} &=
+        \begin{bmatrix}
+            60 & 0 & 0 & 0 & 0 \\
+            0 & 10 & 0 & 0 & 0 \\
+            0 & 0 & 200 & 0 & 0 \\
+            0 & 0 & 0 & 10 & 0 \\
+            0 & 0 & 0 & 0 & 30 
+        \end{bmatrix}
+        \: \textrm{,} \:
+        \mathbf{\bar{R}} &=
+        \begin{bmatrix}
+            5 & 0 \\
+            0 & 10 
+        \end{bmatrix}
+    \end{aligned}
+\end{equation}
+
+Giving the following augmented $\mathbf{\bar{K}}$ and $\mathbf{\bar{P}}$:
+\begin{equation}\label{eq:K_WithIntegral}
+    \begin{aligned}
+        \mathbf{\bar{K}} &=
+        \begin{bmatrix}
+            0 & 0 & 9.6633 & 0  & 2.4495\\
+            3.6668 & 3.7228 & 0 & 1 &  0
+        \end{bmatrix}
+        \: \textrm{,} \:
+        \mathbf{\bar{P}} &=
+        \begin{bmatrix}
+            0 & 6.3246 \\
+            2.2361 & 0 \\
+            -1 & 0 \\
+            0 & -1
+        \end{bmatrix}
+    \end{aligned}
+\end{equation}
+Notice that $\mathbf{\bar{P}}$ is determined by \cref{eq:aug_sys_CL} and not by the expression in \cref{eq:P_expression}.
+
+\subsubsection{Comparison of optimal control with and without integral effect}
+
+The response of elevation without and with integral effect can be found in \cref{fig:P3p2ElevWithoutIntegral} and \cref{fig:P3p3ElevWithIntegral} in appendix D, respectively. The pitch response without and with integral effect can be found in \cref{fig:P3p2PitchWithoutIntegral} and \cref{fig:P3p2PitchWithIntegral} in appendix D, respectively. When comparing responses we used step functions as the reference input so the situations would be as equal as possible. 
+
+We see quite a big difference regarding the elevation response as when the elevation rate reference is set back to 0 after being raised, the elevation is actually kept constant shortly after, with integral effect. Without the integral effect the controller is unable to keep the travel rate at 0 until the elevation reenters the equilibrium point. This is due to the integral effect cumulatively integrating the difference. For the pitch we see very little difference with and without the integral effect.
+

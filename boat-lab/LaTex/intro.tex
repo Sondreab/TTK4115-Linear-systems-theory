@@ -1,0 +1,90 @@
+\section{Defining system model}
+
+\iffalse
+
+The ship:
+
+Nonlinear dynamic model of a ship can be represented as:
+
+\begin{equation} \label{eq:dynamic_ship_model}
+    \begin{aligned}
+    \mathbf{\dot{\eta}} &= \mathbf{R}(\psi)\boldsymbol\nu \\
+    \mathbf{M \dot{\nu}} + \mathbf{C}(\boldsymbol\nu) \boldsymbol\nu + \mathbf{D}(\boldsymbol\nu) \boldsymbol\nu &= \boldsymbol\tau + \mathbf{w}
+    \end{aligned}
+\end{equation}
+
+where
+\begin{itemize}
+    \item $\mathbf{M}$ - System inertia matrix.
+    \item $\mathbf{C}$ - Coriolis-centripetal Matrix.
+    \item $\mathbf{D}$ - Damping matrix.
+    \item $\boldsymbol\tau$ - Vector of control inputs.
+    \item $\mathbf{w}$ - Vector of environmental disturbances.
+    \item $\boldsymbol\eta$ - NED positions $[x, y, \psi]$. Where $x$ is the position in the north-direction, $y$ is the position in the east-direction, and $\psi$ is the angle between the north direction and the $x_b$ axis. $\psi$ is positive clockwise.
+    \item $\boldsymbol\nu$ - BODY velocities $[u, v, r]$. Where $u$ is the velocity in the x-direction, $v$ the velocity in the y-direction and  r is rotation velocity about the $z$-axis
+\end{itemize}
+
+Assuming that the speed is low such that some of the nonlinear terms are negligible, the equations are reduced to:
+
+\begin{subequations} \label{eq:low_speed_ship_model}
+    \begin{align}
+    \mathbf{\dot{\eta}} &= \mathbf{R}(\psi)\boldsymbol\nu \label{eq:low_speed_NED_velocity}
+    \\
+    \mathbf{M \dot{\nu}} + \mathbf{C} \boldsymbol\nu + \mathbf{D} \boldsymbol\nu &= \boldsymbol\tau + \mathbf{w} \label{eq:low_speed_control_inputs}
+    \end{align}
+\end{subequations}
+
+Here $\mathbf{w}$ is given in NED reference frame so we assume only small changes in heading. Now we have a linear equation for the body velocities, but the equation for the NED velocities is still non-linear. We assume the forward speed $u$ is constant, such that $u = u_0$.
+Then we simplify the model by only considering the sway(v)-yaw(r) dynamics. If we also let $\boldsymbol\tau = \mathbf{B}\delta$, where $\delta$ is the rudder angle relative to the BODY reference frame, we get the simplified equation:
+
+\begin{equation}
+    \mathbf{M \dot{\nu}} + \mathbf{N} (u_0) \boldsymbol\nu = \boldsymbol\nu = \mathbf{B}\delta + \mathbf{w}_{waves} + \mathbf{w}_{current} \label{eq:simplified_control_inputs}
+\end{equation}
+
+where $\boldsymbol\nu = [v r]^T$ and $\mathbf{N}(u_0) = \mathbf{C}(u_0) + \mathbf{D}(u_0)$.
+
+If we are only interested in $\psi$, we get the following equation for $\boldsymbol\eta$:
+
+\begin{equation}
+    \dot{\boldsymbol\eta} = \dot{\psi} = r \label{eq:simplified_NED_velocities}
+\end{equation}
+
+\fi
+
+%^---------------- commented out, incomplete pre-model ship dynamics.
+
+For the complete explanation of NED and BODY frames and the ship dynamics used to derive the model we're about to present see the assignment text.
+
+In the model the state vector is given by: $\mathbf{x} = \begin{bmatrix} \xi_w & \psi_w & \psi & r & b \end{bmatrix}^T$, where:
+
+\begin{itemize}
+    \item $\psi$ - Is the average heading, without wave disturbance
+    \item $\psi_w$ - Is a high-frequency component due to the wave disturbance.
+    \item $\dot{\xi_w} = \psi_w$
+    \item $r$ - Rotational velocity of the boat in BODY frame.
+    \item $b$ - Bias to the rudder angle, caused by current disturbance.
+\end{itemize}
+
+The complete model of the system we will be using in this assignment can be stated as:
+
+\begin{subequations} \label{eq:ship_model}
+    \begin{align}
+    \dot{\xi_w} &= \psi_w  \label{eq:ship_model_xi} \\
+    \dot{\psi_w} &= -\omega_0^2 \eta_w - 2 \lambda \omega_0 \psi_w + K_w w_w \label{eq:ship_model_psi_w} \\
+    \dot{\psi} &= r  \label{eq:ship_model_psi} \\
+    \dot{r} &= - \frac{1}{T} r + \frac{K}{T} (\delta - b)  \label{eq:ship_model_r}\\
+    \dot{b} &= w_b  \label{eq:ship_model_b} \\
+    y &= \psi + \psi_w + v \label{eq:ship_model_y}
+    \end{align}
+\end{subequations}
+
+where $y$ is the measured heading (compass measurement). $w_b, w_w$ and $v$ are white noise processes. Also note that the model in the assignment text that this is derived from is simplified to a 1st order Nomoto-approximation in \cref{eq:ship_model_psi}-(\ref{eq:ship_model_r}), with Nomoto time and gain constants, $T$ and $K$. The Nomoto model is common for modelling yaw in marine systems.
+
+Clearly, the system can be written as:
+
+\begin{equation} \label{eq:state_space}
+    \mathbf{\dot{x}} = \mathbf{Ax} + \mathbf{B}u + \mathbf{Ew}, 
+    \quad y = \mathbf{Cx} + v
+\end{equation}
+
+with $\mathbf{x} = \begin{bmatrix} \xi_w & \psi_w & \psi & r & b \end{bmatrix}^T, u = \delta$ and $\mathbf{w} = \begin{bmatrix} w_w & w_b \end{bmatrix}^T$. The purpose of this model is to estimate the course angle without the wave disturbance. Thus, we model the ship as a system not affected by waves and include the disturbance only in the measurement. Further, the current only affects the rudder angle in the model. This is of course not the case for an actual ship, but it simplifies the Kalman filter design.

@@ -1,0 +1,293 @@
+\section{Mathematical Modeling}\label{sec:part1}
+
+In this section we will derive a mathematical model of our system which will serve as the foundation for the rest of the assignment.
+
+The propeller forces for the front and back propellers are assumed to be in linear relation with the voltage inputs and are given by \cref{eq:motor_force}:
+
+\begin{subequations}\label{eq:motor_force}
+    \begin{align}
+        F_{f} = K_{f} V_{f} \label{eq:motor_force_front} \\
+        F_{b} = K_{f} V_{b} \label{eq:motor_force_back}
+    \end{align}
+\end{subequations}
+
+where $K_{f}$ is the motor constant and $V_{f}$ and $V_{b}$ are the input voltages for the front and back propellers, respectively.
+
+\subsection{System dynamics}
+
+All movement in the system will be part of a rotational displacement, so to analyze and derive a mathematical model we will be using the rotational version of Newton's 2. law shown in \cref{N2_rot}: 
+
+\begin{equation}
+    I \alpha = \sum \tau \label{N2_rot}
+\end{equation}
+
+From this we analyze each joint's movement to derive equations of motion for pitch, elevation and travel, ($p, e, \lambda$). \\
+
+Pitch:
+
+\begin{subequations}\label{eq:model_pitch_sol}
+    \begin{aligned}
+        J_{p} \ddot{p} &= \sum \tau_{p} \\
+        &= F_{f} l_{p} - F_{g,f,tan} l_{p} - (F_{b} l_{p} - F_{g,b,tan} l_{p}) \\
+        &= l_{p} (K_{f} V_{f} - m_{p} g \cos(p) - K_{f} V_{b} + m_{p} g \cos(p)) \\
+        &= K_{f} l_{p} (V_{f} - V_{b})
+    \end{aligned}
+\end{subequations}
+
+Elevation:
+
+\begin{subequations}\label{eq:model_elev_sol}
+    \begin{aligned}
+        J_{e} \ddot{e} &= \sum \tau_{e} \\
+        &= F_{g,c,tan} l_{c} + F_{p} l_{h} - F_{g,p,tan} l_{h} \\
+        &= F_{g,c} \cos(e) l_{c} + (F_{f} + F_{b}) \cos(p) l_{h} - F_{g,p} \cos(e) l_{h} \\
+        &= g (m_{c} l_{c} - 2 m_{p} l_{h} ) \cos(e) + K_{f} l_{h} V_{s} \cos(p)
+    \end{aligned}
+\end{subequations}
+
+Travel:
+
+\begin{subequations}\label{eq:model_travel_sol}
+    \begin{align}
+        J_{\lambda} \ddot{\lambda} &= \sum \tau_{\lambda}  \\
+        &= -F_{p,tan} l_{h,\lambda} \\
+        &= -(F_{f} + F_b) \sin(p) l_{h} \cos(e) \\
+        &= -K_{f} l_{h} V_{s} \cos(e) \sin(p)
+    \end{align}
+\end{subequations}
+
+From \cref{eq:model_pitch_sol}-(\ref{eq:model_travel_sol}) we arrive at the model:
+
+\begin{subequations}\label{eq:model}
+    \begin{align}
+        J_{p}\ddot{p} &= L_{1} V_{d}
+        \label{eq:model_pitch} \\
+        J_{e}\ddot{e} &= L_{2} \cos(e) + L_{3} V_{s} \cos(p)
+        \label{eq:model_elev} \\
+        J_{\lambda}\ddot{\lambda} &= L_{4} V_{s} \cos(e) \sin(p)
+        \label{eq:model_travel}
+    \end{align}
+\end{subequations}
+
+where \textit{$V_s$} and \textit{$V_d$} are given by \cref{eq:input_V_s} and \cref{eq:input_V_d}  respectively and make out the input of the system:
+
+\begin{subequations}\label{eq:input}
+    \begin{align}
+        V_{s} &= V_{f} + V_{b} \label{eq:input_V_s} \\
+        V_{d} &= V_{f} - V_{b} \label{eq:input_V_d}
+    \end{align}
+\end{subequations}
+
+and the constants $L_i$, $i = {1, 2, 3, 4}$ are given by:
+\begin{subequations}\label{const:L}
+    \begin{align}
+        L_{1} &= K_{f} l_{p} \label{const:L_1} \\
+        L_{2} &= g (m_{c} l_{c} - 2 m_{p} l_{h} ) \label{const:L_2} \\
+        L_{3} &= K_{f} l_{h} \label{const:L_3} \\
+        L_{4} &= -K_{f} l_{h} \label{const:L_4}
+    \end{align}
+\end{subequations}
+
+
+\subsection{Linearization}
+
+Because the helicopter is a non-linear system we need to linearize the model first in order to design a linear controller. We linearize the equations of motion given by \cref{eq:model} around the point of equilibrium:
+
+\begin{equation}\label{eq:lin_equilibrium}
+    \begin{aligned}
+        \begin{bmatrix} p \\ e \\ \lambda \end{bmatrix}
+        =
+        \begin{bmatrix} p^* \\ e^* \\ \lambda^* \end{bmatrix}
+        \quad \textrm{where} \quad
+        \begin{bmatrix} p^* \\ e^* \\ \lambda^* \end{bmatrix}
+        =
+       \begin{bmatrix} \dot{p^*} \\ \dot{e^*} \\ \dot{\lambda^*} \end{bmatrix}
+        = 
+        \begin{bmatrix} 0 \\ 0 \\ 0 \end{bmatrix} \\
+    \end{aligned}
+\end{equation}
+
+ for all time (this also implies $\ddot{p^*} = \ddot{e^*} = \ddot{\lambda^*} = 0$). To do this we need to find the values for \cref{eq:lin_input_equilibrium} such that the input $(V_s^*, V_d^*)^T$ keeps the helicopter in the equilibrium state.
+
+\begin{equation}\label{eq:lin_input_equilibrium}
+    \begin{aligned}
+        \begin{bmatrix} V_{s} \\ V_{d} \end{bmatrix}
+        =
+        \begin{bmatrix} V_{s}^* \\ V_{d}^* \end{bmatrix}
+    \end{aligned}
+\end{equation}
+
+
+Then we want to make a coordinate transformation on the system so the input $\mathbf{u} = (0, 0)^T$ when the system is stationary in the equilibrium point, keeps it in the equilibrium point. The transformation is the following:
+
+
+\begin{equation}\label{eq:coordinate_transform}
+    \begin{bmatrix} \tilde{p} \\ \tilde{e} \\ \tilde{\lambda} \end{bmatrix}
+    =
+    \begin{bmatrix} p \\ e \\ \lambda \end{bmatrix}
+    -
+    \begin{bmatrix} p^* \\ e^* \\ \lambda^* \end{bmatrix}
+    \quad \textrm{and} \quad
+    \begin{bmatrix} \tilde{V_{s}} \\ \tilde{V_{d}} \end{bmatrix}
+    =
+    \begin{bmatrix} V_{s} \\ V_{d} \end{bmatrix}
+    -
+    \begin{bmatrix} V_{s}^* \\ V_{d}^* \end{bmatrix}
+\end{equation}
+
+From \Cref{eq:model_pitch}:
+\begin{subequations}\label{eq:linearize_V_d}
+    \begin{aligned}
+       \ddot{p} &= \frac{1}{J_{p}} L_{1} V_{d} \quad |_{\ddot{p^*},V_{d}^*} \\
+       0 &= \frac{1}{J_{p}} L_{1} V_{d}^* \implies \underline{V_{d}^* = 0}
+    \end{aligned}
+\end{subequations}
+
+
+
+from \Cref{eq:model_elev}:
+\begin{subequations}\label{eq:linearize_V_s}
+    \begin{aligned}
+       \ddot{e} &= \frac{1}{J_{e}} ( L_{2} \cos(e) + L_{3} V_{s} \cos(p)) 
+       \quad |_{p^*,e^*,\ddot{e^*},V_{s}^*}  \\
+       0 &= \frac{1}{J_{e}} (L_{2} + L_{3} V_{s}^*) \\
+       V_{s}^* &= -\frac{L_{2}}{L_{3}} 
+       = \underline{g \frac{2 m_{p} l_{h} - m_{c} l_{c}}{K_{f} l_{h}}} \label{const:V_s_star}
+    \end{aligned}
+\end{subequations}
+
+From \cref{eq:lin_equilibrium}-(\ref{eq:linearize_V_s}) follows:
+
+\begin{equation}\label{eq:transformed}
+    \begin{bmatrix} \tilde{p} \\ \tilde{e} \\ \tilde{\lambda} \end{bmatrix}
+    =
+    \begin{bmatrix} p \\ e \\ \lambda \end{bmatrix}
+    \quad \textrm{and} \quad
+    \begin{bmatrix} \tilde{V_{s}} \\ \tilde{V_{d}} \end{bmatrix}
+    =
+    \begin{bmatrix} V_{s} - g \frac{2 m_{p} l_{h} - m_{c} l_{c}}{K_{f} l_{h}} \\ V_{d} \end{bmatrix}
+\end{equation}
+    
+The inertia corresponding to the different joints are given as follows:
+
+\begin{subequations}\label{eq:inertia}
+    \begin{aligned}
+        J_{p} &= 2 m_{p} l_{p}^2
+        \label{eq:inertia_pitch} \\
+        J_{e} &= m_{c} l_{c}^2 +  2 m_{p} l_{h}^2
+        \label{eq:inertia_elev} \\
+        J_{\lambda} &= m_{c} l_{c}^2 + 2 m_{p} (l_{h}^2 + l_{p}^2)
+        \label{eq:inertia_travel}
+    \end{aligned}
+\end{subequations}
+
+We then need to linearize the coordinate-transformed system to reach the desired result, and we start by substituting \cref{eq:transformed} into \cref{eq:model}:
+
+\begin{subequations}
+    \begin{aligned}
+        \ddot{\tilde{p}} &= \frac{1}{J_{p}} L_{1} \tilde{V_{d}} \\
+        \ddot{\tilde{e}} &= \frac{1}{J_{e}} L_{2} \cos(\tilde{e}) + L_{3} (\tilde{V_{s}} + V_{s}^*) \cos(\tilde{p}) \\
+        \ddot{\tilde{\lambda}} &= \frac{1}{J_{\lambda}} L_{4} (\tilde{V_{s}} + V_{s}^*) \cos(\tilde{e}) \sin(\tilde{p})
+    \end{aligned}
+\end{subequations}
+
+These are second order differential equations, and to proceed with the linearization we need to change them into linked first order differential equations. This gives us a system on the form:
+
+
+\begin{equation}
+    \begin{aligned}
+    \mathbf{\dot{x}} &= \mathbf{h}(\mathbf{x},\mathbf{u}) \\
+    \mathbf{y} &= \mathbf{f}(\mathbf{x},\mathbf{u}) 
+    \end{aligned}
+\end{equation}
+
+
+We then use the functions $\mathbf{h}(\mathbf{x},\mathbf{u})$ and 
+    $\mathbf{f}(\mathbf{x},\mathbf{u})$ to change the system to the form of a state space model:
+
+\begin{equation}
+    \begin{aligned}
+    \mathbf{\dot{\tilde{x}}} &= \mathbf{A x} + \mathbf{B u} \\
+    \mathbf{ \tilde{y}} &= \mathbf{C u} + \mathbf{D u} \\ \\
+    \textrm{where:} 
+    \quad&\mathbf{A} = \frac{\delta \mathbf{h(x,u)}}{\delta \mathbf{x}} |_{\mathbf{x^*, u^*}}, 
+    \quad \mathbf{B} = \frac{\delta \mathbf{h(x,u)}}{\delta \mathbf{u}} |_{\mathbf{x^*, u^*}}, \\
+    \quad&\mathbf{C} = \frac{\delta \mathbf{f(x,u)}}{\delta \mathbf{x}} |_{\mathbf{x^*, u^*}},
+    \quad \mathbf{D} = \frac{\delta \mathbf{f(x,u)}}{\delta \mathbf{u}} |_{\mathbf{x^*, u^*}},
+    \end{aligned}
+\end{equation}
+
+We are only interested in $\mathbf{A}$ and $\mathbf{B}$, because $\mathbf{y}$ in our system is already linear. Thus we get:
+
+\begin{equation}
+    \begin{aligned}
+        \mathbf{A} =
+        \begin{bmatrix} 0 & 0 & 0 \\ 0 & 0 & 0 \\ K_{3} & 0 & 0 \end{bmatrix}, \quad
+        \mathbf{B} = 
+        \begin{bmatrix} 0 & K_{1} \\ K_{2} & 0 \\ 0 & 0 \end{bmatrix}
+    \end{aligned}
+\end{equation}
+
+which makes our linearized system:
+\begin{equation}\label{eq:model_final_sol}
+    \begin{aligned}
+        \begin{bmatrix} \ddot{\tilde{p}} \\ \ddot{\tilde{e}} \\ \ddot{\tilde{\lambda}} \end{bmatrix}
+        &=
+        \begin{bmatrix} 0 & 0 & 0 \\ 0 & 0 & 0 \\ K_{3} & 0 & 0 \end{bmatrix}
+        \begin{bmatrix} \tilde{p} \\ \tilde{e} \\ \tilde{\lambda} \end{bmatrix}
+        +
+        \begin{bmatrix} 0 & K_{1} \\ K_{2} & 0 \\ 0 & 0 \end{bmatrix}
+        \begin{bmatrix} \tilde{V_{s}} \\ \tilde{V_{d}} \end{bmatrix}
+        = 
+        \begin{bmatrix} K_{1} \tilde{V_{d}} \\ K_{2} \tilde{V_{s}} \\ K_{3} \tilde{p} \end{bmatrix} \\
+    \end{aligned}
+\end{equation}
+
+or an alternative form to express it:
+\begin{subequations}\label{eq:lin_trans_motion}
+    \begin{aligned}
+        \ddot{\tilde{p}} &= K_{1} \tilde{V_{d}}
+        \label{eq:lin_mot_pitch} \\
+        \ddot{\tilde{e}} &= K_{2} \tilde{V_{s}}
+        \label{eq:lin_mot_elev} \\
+        \ddot{\tilde{\lambda}} &= K_{3} \tilde{p}
+        \label{eq:lin_mot_travel}
+    \end{aligned}
+\end{subequations}
+
+where the constants $K_i$, $i = {1, 2, 3}$ are given by:
+
+\begin{subequations}\label{const:K}
+    \begin{align}
+        K_{1} &= \frac{L_{1}}{J_{p}} = \frac{K_{f}}{2 m_{p} l_{p}} 
+        \label{const:K_1}  \\
+        K_{2} &= \frac{L_{3}}{J_{e}} = \frac{K_{f} l_{h}}{m_{c} l_{c}^2 + 2 m_{p} l_{h}^2}
+        \label{const:K_2} \\
+        K_{3} &= \frac{L_4}{J_\lambda} V_s^* = g \frac{m_{c} l_{c} - 2 m_{p} l_{h}}{m_{c} l_{c}^2 + 2 m_{p} (l_{h}^2 + l_{p}^2)} 
+        \label{const:K_3}
+    \end{align}
+\end{subequations}
+
+
+\subsection{Initial Flight of helicopter without controller}
+To grasp how it is to fly a helicopter without any controllers we connected the x-axis of our joystick to $V_d$ and the y-axis to $V_s$. A gain of 1 for $V_d$ and 10 for $V_s$ was applied to convert the raw input from the joystick to a suitable voltage range for the helicopter.
+It was nearly impossible to fly the helicopter in any predictable manner without any controllers. This is because we go with linear input in a non-linear system.
+
+\subsection{Implementing offsets}
+To make sure the helicopters encoders were giving the output 0 for all 3 joint angles at the equilibrium point which we linearized about, we added offsets where necessary. For elevation we added a $-30^\circ$ offset, while for pitch and travel we left the offset at 0. For pitch this would be fine as long as the helicopter was connected to the computer while resting on the table, while the initial state of travel is irrelevant.
+
+We then calculated the motor constant, $K_f$, from measuring what input voltage for $V_s$ (equal to the value of $V_s^*$) would keep the helicopter at a constant elevation in the equilibrium point. The input value we found to be the best fit was $V_s^* = 6.95$ V, thus from \cref{const:V_s_star}:
+
+\begin{subequations}
+    \begin{align}
+        V_{s}^* &= g \frac{2 m_{p} l_{h} - m_{c} l_{c}}{K_{f} l_{h}} \\
+        \implies \quad  
+        K_f &= g \frac{2 m_{p} l_{h} - m_{c} l_{c}}{V_s^* l_{h}} = 0.1437 \label{const:K_f}
+    \end{align}
+\end{subequations}
+
+This value for the motor constant will be used throughout the rest of the assignment.
+
+
+\subsection{Model limitations}
+Given the nature of linearization, we have a simplified, but imperfect model. The Discrepancies between our model and the helicopters behaviour are going to be small around the equilibrium we linearized about, but grow as the states move away from that point. This modelling error will have an effect on all other parts of this assignment, but in most cases the effect will be deemed acceptably small.

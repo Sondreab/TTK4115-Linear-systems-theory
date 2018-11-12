@@ -1,0 +1,24 @@
+\section{Conclusion}\label{sec:conclusion}
+
+\subsection{Mono- versus Multi-variable control}
+Mono-variable control gave us some degree of control over the helicopter, however, there were still some difficulties. The controller was not very robust and it was quite easy to provide a series of input that made the system unstable. One possible cause of this is our linearized system dynamics. The linearization makes it possible to control the helicopter, but only in the linear region surrounding the point of linearization, meaning that if we manage to get our helicopter outside the linear region it will become unstable.
+
+Another limitation of mono-variable control is that it is assumed that the states are independent of each other, for example, changing elevation should not affect the pitch and vice versa. This is not true as changing one of the inputs, $\tilde{V_d}$ and $\tilde{V_s}$, will affect the other. An example of this can be seen if one change the pitch direction fast enough as this causes the elevation of the helicopter to drop.
+
+The multi-variable controller was much more robust and accurate. After the final tuning it provided better control than the mono-variable alternative as well as removing stationary deviations. It is almost impossible to make the physical system unstable as long as the inputs are reasonable. The LQR with integral effect provides much better tracking, is faster, and more robust than the mono-variable controller.
+
+Another benefit of the LQR is that our system is optimally controlled, and we can reap all the benefits that this implies. One point of exceptional importance is that this gives us much greater confidence as we move on to constructing our observer, as the LQR is an ideal controller since it gives a really low phase-margin\cite{Chen2014}.
+
+\subsection{Observers and difficulties in their implementation}
+Constructing and tuning our full-state observer took some effort, but in the end it was certainly possible. From the plots we constructed we see that it provides good tracking for both the normal LQR and the one with integral effect when compared to the actual measurement from the radial encoders.
+
+However, when comparing our system with and without observer qualitatively, it is difficult to say if the behaviour of the helicopter has improved. The only thing we can say with any degree of confidence is that the system with full-state observer has comparable performance to the one without observer.
+
+A huge assumption made when constructing our minimal state-observer is the separation principle\cite{Chen2014}. We assumed that the error dynamics could be determined without impacting the system dynamics. No matter how hard we tried to tune our estimator we never managed to get a stable physical system. This could be because we simply do not have the required knowledge to find the right $\mathbf{L}$-gain. However, a more likely explanation is that the separation principle is not valid in this system. That together with too much simplification of our system model and suboptimal tuning of controllers.
+
+\subsection{Possible improvements}
+Firstly our model can be improved; We can measure the physical constants given to us in \cref{tab:numval} and we can construct less simplified equations of motion. This would give us a more correct starting point when we construct our controller.
+
+If we had more time to tune both LQR controllers we would have more robust and accurate control of our helicopter. It could also enable us to get better results on the minimal state observer.
+
+Utilizing a better algorithm for placing poles of our minimal state observer than simply placing them in a fan in the left half-plane could give us a more stable minimal state observer.

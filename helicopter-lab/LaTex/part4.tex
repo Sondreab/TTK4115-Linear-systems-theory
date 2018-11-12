@@ -1,0 +1,126 @@
+\section{State estimation}\label{sec:part4}
+
+In this part of the assignment we will only use the measurements of $\tilde{p}, \tilde{e}, \tilde{\lambda},$ and estimate the corresponding angular velocity with an observer rather than using numerical derivation. So we're going to derive a state-space model of the system in order to implement this observer.
+
+\subsection{State-space formulation}
+
+From \cref{eq:model_final_sol} we're deriving a state-space model on the form: 
+
+\begin{equation}
+    \begin{aligned}
+        \mathbf{\dot{x}} &= \mathbf{Ax + Bu} \\
+        \mathbf{y} &= \mathbf{Cx}
+    \end{aligned}
+\end{equation}
+
+where \textbf{A}, \textbf{B}, and \textbf{C} are matrices and the state vector, the input vector and the output vectors are given by \cref{eq:state_input} and the system matrices by \cref{eq:obsSysMtr}:
+
+\begin{equation}\label{eq:state_input}
+    \begin{aligned}
+        \mathbf{x} &= \begin{bmatrix} \tilde{p} \\ \dot{\tilde{p}} \\ \tilde{e} \\ \dot{\tilde{e}} \\ \tilde{\lambda} \\ \dot{\tilde{\lambda}} \\ \end{bmatrix} , \quad
+        \mathbf{u} &= \begin{bmatrix} \tilde{V}_s \\ \tilde{V}_d \end{bmatrix}
+        \quad \textrm{and} \quad
+        \mathbf{y} &=  \begin{bmatrix} \tilde{p} \\ \tilde{e} \\ \tilde{\lambda} \end{bmatrix}
+    \end{aligned}
+\end{equation}
+
+\begin{equation}\label{eq:obsSysMtr}
+    \begin{aligned}
+        \mathbf{A} &=
+        \begin{bmatrix}
+            0 & 1 & 0 & 0 & 0 & 0 \\
+            0 & 0 & 0 & 0 & 0 & 0 \\
+            0 & 0 & 0 & 1 & 0 & 0 \\
+            0 & 0 & 0 & 0 & 0 & 0 \\
+            0 & 0 & 0 & 0 & 0 & 1 \\
+            K_3 & 0 & 0 & 0 & 0 & 0 
+        \end{bmatrix}
+        \: \textrm{,} \:
+        \mathbf{B} &=
+        \begin{bmatrix}
+            0 & 0 \\
+            0 & K_1 \\
+            0 & 0 \\
+            K_2 & 0 \\
+            0 & 0 \\
+            0 & 0 
+        \end{bmatrix}
+        \: \textrm{,} \:
+        \mathbf{C} &=
+        \begin{bmatrix}
+            1 & 0 & 0 & 0 & 0 & 0\\
+            0 & 0 & 1 & 0 & 0 & 0\\
+            0 & 0 & 0 & 0 & 1 & 0
+        \end{bmatrix}
+    \end{aligned}
+\end{equation}
+
+
+\subsection{Observability and observer}
+To create an observer for our system we first need to determine if our system is observable, an observability test using the principle of duality is described in \cite{Chen2014}. The principle of duality states that the system is observable if the controllability-matrix of the transposed system has full rank. Since the dimensions of our observer is so large we instead opt to use the MATLAB command \texttt{obsv(A,C)} nested inside \texttt{rank(MATRIX)} to find the rank of our observability matrix, $\mathbb{O}$, instead of computing it by hand. 
+
+The conclusion is that the rank of $\mathbb{O}$ match the dimensions of A, and hence our system is controllable.
+
+
+
+We then make the observer on the form of \cref{eq:observer}. Here \textbf{L} is the Luenberger obeserver gain\cite{Chen2014}. Tuning our observer is a matter of placing poles of $\textbf{L}$ in \cref{eq:observer}. The easiest way to do this is to use the MATLAB command \texttt{place(A',C',pol)}, where \texttt{pol} is a vector consisting of the desired poles. Note that the $\textbf{A}$ and $\textbf{C}$ matrices must be transposed in order for the MATLAB command to work, luckily for us the poles of a system is unchanged when the system is transposed\cite{regtek}.
+
+\begin{equation}\label{eq:observer}
+    \mathbf{\dot{\hat{x}} = A\hat{x} + Bu + L(y - C\hat{x}})
+\end{equation}
+
+\subsection{Reducing measurements of our observer}
+We wish to see if we can reduce the dimensions of the measurement vector, $\mathbf{y}$, by omitting either $\tilde{p}$ or $\tilde{\lambda}$. We use our same procedure for determining the observability of our system, first without $\tilde{p}$, then without $\tilde{\lambda}$, in $\mathbf{y}$. This change will cause the $\mathbf{C}$-matrix of our system to change and hence the observability matrix will change. The new $\mathbf{C}$-matrix corresponding to the omission of $\tilde{p}$ from the measurements can be seen in \cref{eq:CNotP}, while the $\mathbf{C}$-matrix corresponding to omission of $\tilde{\lambda}$ is shown \cref{eq:CNotLambda}.
+\Cref{eq:obsNotP} shows that removing $\tilde{p}$ does not make our system unobservable, while removing $\tilde{\lambda}$ will result in an unobservable system as seen in \cref{eq:obsNotLambda}.
+
+\begin{subequations}
+    \begin{align}
+        \mathbf{C}_{without \tilde{p}} &= \label{eq:CNotP}
+        \begin{bmatrix}
+            0 & 0 & 1 & 0 & 0 & 0 \\
+            0 & 0 & 0 & 0 & 1 & 0
+        \end{bmatrix}
+        \\
+        \mathbf{C}_{without \tilde{\lambda}} &= \label{eq:CNotLambda}
+        \begin{bmatrix}
+            1 & 0 & 0 & 0 & 0 & 0 \\
+            0 & 0 & 1 & 0 & 0 & 0
+        \end{bmatrix}
+    \end{align}
+\end{subequations}
+
+\begin{subequations}
+    \begin{align}
+    rank(\mathbb{O}_{without \tilde{p}}) &= 6 = \dim(A) \label{eq:obsNotP}
+    \\
+    rank(\mathbb{O}_{without \tilde{\lambda}}) &= 4 \neq \dim(A) \label{eq:obsNotLambda}
+    \end{align}
+\end{subequations}
+
+Since we now know that the removal of $\tilde{\lambda}$ makes our system unobservable we instead move onward in constructing our minimal observer by removing $\tilde{p}$ from the measurement vector, $\mathbf{y}$. The new measurement vector is given by \cref{eq:minimalObserver}.
+The same procedure for placing poles of our first observer, described in the prevous section, can be applied to place poles of our minimal observer as they have the same observer-form, \cref{eq:observer}.
+
+
+\begin{equation}\label{eq:minimalObserver}
+    \mathbf{y} = \begin{bmatrix} \tilde{e} \\ \tilde{\lambda} \end{bmatrix} =
+    \begin{bmatrix}
+        0 & 0 & 1 & 0 & 0 & 0 \\
+        0 & 0 & 0 & 0 & 1 & 0
+    \end{bmatrix}
+    \mathbf{x}
+\end{equation}
+
+\subsection{Pole-placement of observers}
+
+Placing the poles for the observer taking all three states was quite a trivial task. As mentioned in the previous section we used MATLAB commands to construct the $\mathbf{L}$ with desired poles. The code can be found in \cref{fig:P4p2}.
+
+Placing the poles for the minimal-state observer however was not so trivial. We couldn't manage to keep the pitch stable no matter where we placed the poles. Our best response was obtained by using the values in \cref{fig:P4p3}. Why we had these difficulties are further discussed in the conclusion.
+
+\subsection{Comparison and evaluation of observers}
+
+When working with a state estimator it's interesting to see how close to the measured state our estimators get. The response of measured and estimated states using the LQR-regulator without and with integral effect can be found in \cref{fig:ESTWithoutIntegral} and \cref{fig:ESTWithIntegral} in appendix D, respectively. We chose to look at the states pitch, elevation rate and travel.
+
+From the plots we can see that the estimation is very good for pitch and travel, and a bit more off point with elevation rate. The difference in tracking between the controllers with and without integral effect are also unnoticeable.
+
+When we look at the minimal state estimator in \cref{fig:ESTnotp} however, the responses are very different. There is a phase lag on the estimate for pitch and elevation, but the estimated travel is fairly good. The plot is incomplete because we had to shut down the helicopter early. This was to not damage it because of the oscillating pitch. The abrupt turn in the measured pitch is due to the helicopter head reaching it's maximum pitch and rebounding the other way.
+
